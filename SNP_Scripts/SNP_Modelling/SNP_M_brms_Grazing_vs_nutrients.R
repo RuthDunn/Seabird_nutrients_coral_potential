@@ -50,6 +50,8 @@ fish$Atoll_Island <- paste(fish$Atoll, fish$Island, sep = "_")
 
 # Run model ####
 
+# (Commented out for now)
+
 # grazing.model.run.scale <- brm(log1Grazing ~ scalelogNitrogen + (1|Atoll_Island),
 #                                data = fish,
 #                                iter = 3000, warmup = 1000, chains = 4, cores = 4,
@@ -90,7 +92,7 @@ load("SNP_ModelOutputs/Grazing_Nitrogen_brms.scale.Rdata")
 hypothesis(grazing.model.run.scale, "scalelogNitrogen>0")
 
 # Load predication data:
-pred.data <- read.csv("SNP_Data/Processed/Seabird_NutrientInput_Predicted.csv")
+pred.data <- read.csv("SNP_Data/Processed/Prediction_data/Seabird_NutrientInput_Chagos_Predicted.csv")
 
 # High.nn scenario:
 pred.data.highnn <- aggregate(pred.data$NitrogenInput.high.nn, by = list(pred.data$Atoll_Island), FUN = "sum")
@@ -179,11 +181,5 @@ p1 <- pr.Erosion.Nitrogen %>%
 
 p1
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Save plots ####
-
-# A) Left and right?
+# Left and right
 p1 + p2 + plot_layout(widths = c(3,1))
-
-ggsave("Plots/Grazing_Nitrogen_ppt.png", width = 5, height = 4)

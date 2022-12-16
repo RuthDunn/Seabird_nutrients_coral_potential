@@ -105,12 +105,12 @@ seabirds$NitrogenInput.perArea.high <- (0.181 * (seabirds$Defecation.rate/1000) 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-write.csv(seabirds, "SNP_Data/Processed/Seabird_NutrientInput_Predicted_OtherAtolls.csv")
-
 # Total nitrogen input:
 seabirds$tot.Nitrogen <- seabirds$NitrogenInput.perArea * seabirds$Area
 seabirds$tot.Nitrogen.low <- seabirds$NitrogenInput.perArea.low * seabirds$Area
 seabirds$tot.Nitrogen.high <- seabirds$NitrogenInput.perArea.high * seabirds$Area
+
+write.csv(seabirds, "SNP_Data/Processed/Seabird_NutrientInput_Predicted_OtherAtolls.csv")
 
 # In tonnes:
 colSums(seabirds[,c("tot.Nitrogen", "tot.Nitrogen.low", "tot.Nitrogen.high")])/1000

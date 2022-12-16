@@ -68,3 +68,9 @@ pred.data$erosion.high <- eros$Q97.5
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 write.csv(pred.data, "SNP_Data/Processed/Pred_CoralFunction_OtherAtolls.csv")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Summary stats for ms
+
+exp(max(pred.data$coralgrowth))

@@ -1,6 +1,12 @@
+
+# Get ready ####
+
+# Clear environment:
+
 rm(list = ls(all = TRUE))
 
-# Packages:
+# Load packages:
+
 library(brms)
 library(dplyr)
 library(tidybayes)
@@ -14,81 +20,37 @@ library(bayesplot)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Load data ####
+# Load & edit data ####
 
 seabirds <- read.csv("SNP_Data/Processed/SeabirdDensityDrivers.csv")
 seabirds <- seabirds[,-1]
 
-# Keep the 3 96% species:
-seabirds = subset(seabirds, select = c(Atoll_Island, Rattus_rattus, Size_Ha, NonNativeForest_p,
-                                       Sula_sula, Onychoprion_fuscatus, Anous_tenuirostris))
-
 # Remove "eradicated" and "unknown"
 seabirds$Rattus_rattus <- as.factor(seabirds$Rattus_rattus)
-levels(seabirds$Rattus_rattus)
 table(seabirds$Rattus_rattus)
 levels(seabirds$Rattus_rattus) <- c("A", NA, "P", NA)
 
 # Remove rows without veg or rat data
 seabirds <- seabirds[complete.cases(seabirds), ]
 
-# Go from wide to long
+# Go from wide to long data format
 seabirds <- gather(seabirds, Species, Pairs, Sula_sula:Anous_tenuirostris, factor_key = TRUE)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Quick plots: ####
 
-# seabirds$Pairs[seabirds$Pairs==0] <- NA
-# seabirds<-seabirds[complete.cases(seabirds),]
-
 # Island size
 
-# ggplot(data = seabirds, aes(x = Size_Ha, y = Pairs)) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(Size_Ha), y = Pairs)) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(Size_Ha), y = log(Pairs))) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(Size_Ha), y = sqrt(Pairs))) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(Size_Ha), y = log(Pairs+1), fill = Rattus_rattus)) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
+ggplot(data = seabirds, aes(x = log(Size_Ha), y = log(Pairs+1), fill = Rattus_rattus)) +
+  geom_point() +
+  geom_smooth(method = "lm")
 
 # Veg cover
 
-# ggplot(data = seabirds, aes(x = NonNativeForest_p, y = Pairs)) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(NonNativeForest_p), y = Pairs)) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(NonNativeForest_p), y = log(Pairs))) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(NonNativeForest_p), y = sqrt(Pairs))) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(NonNativeForest_p), y = log(Pairs+1))) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# 
-# ggplot(data = seabirds, aes(x = log(100-NonNativeForest_p), y = log(Pairs+1), fill = Rattus_rattus)) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
+ggplot(data = seabirds, aes(x = log(100-NonNativeForest_p), y = log(Pairs+1), fill = Rattus_rattus)) +
+  geom_point() +
+  geom_smooth(method = "lm")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -99,21 +61,15 @@ seabirds <- gather(seabirds, Species, Pairs, Sula_sula:Anous_tenuirostris, facto
 seabirds$logArea <- log(seabirds$Size_Ha)
 seabirds$sclogArea <- scale(log(seabirds$Size_Ha), center = TRUE, scale = TRUE)
 
-seabirds$nonnonVeg <- 100-seabirds$NonNativeForest_p
-seabirds$logVeg <- log(100-seabirds$NonNativeForest_p)
-seabirds$sclogVeg <- scale(log(100-seabirds$NonNativeForest_p), center = TRUE, scale = TRUE)
-
-# Transform response:
+seabirds$NativeVeg <- 100-seabirds$NonNativeForest_p
+seabirds$logNativeVeg <- log(100-seabirds$NonNativeForest_p)
+seabirds$sclogNativeVeg <- scale(log(100-seabirds$NonNativeForest_p), center = TRUE, scale = TRUE)
 
 # Check for zero-inflated data:
+
 hist(seabirds$Pairs)
 
-# Check for over-dispersion:
-mean(seabirds$Pairs)
-var(seabirds$Pairs) 
-# There is substantial over-dispersion
-
-# Do other transformations:
+# Perform transformations:
 seabirds$logPairs <- log(seabirds$Pairs+1)
 seabirds$Pairs.p1 <- seabirds$Pairs+1
 
@@ -121,18 +77,16 @@ seabirds$Pairs.p1 <- seabirds$Pairs+1
 
 # Run model ####
 
-seabirds.model.run.scale11 <- brm(bf(Pairs ~ Rattus_rattus + sclogArea + sclogVeg + Species +
-                                       (1|Atoll_Island),
-                                     hu ~ Rattus_rattus),
-                                 data = seabirds,
-                                 family = hurdle_lognormal(),
-                                 iter = 3000, warmup = 1000, chains = 4, seed = 1234, silent = 2,
-                                 save_all_pars = T)
+# (Commented out for now)
 
-# Model comparison:
-# loo9 <- loo(seabirds.model.run.scale9, save_psis = TRUE)
-# loo_compare(loo5, loo6, loo7, loo8, loo9)
-# (Top one = best one)
+# seabirds.model.run.scale11 <- brm(bf(Pairs ~ Rattus_rattus + sclogArea + sclogNativeVeg + Species +
+#                                        (1|Atoll_Island),
+#                                      hu ~ Rattus_rattus),
+#                                  data = seabirds,
+#                                  family = hurdle_lognormal(),
+#                                  iter = 3000, warmup = 1000, chains = 4, seed = 1234, silent = 2,
+#                                  save_all_pars = T)
+
 # 9 is the best one:
 # Family: hurdle_lognormal 
 # Links: mu = identity; sigma = identity; hu = identity 
@@ -141,7 +95,9 @@ seabirds.model.run.scale11 <- brm(bf(Pairs ~ Rattus_rattus + sclogArea + sclogVe
 
 # Run with cmdstanr (faster + more modern than rstan)
 
-# seabirds.model.run11 <- brm(bf(Pairs ~ Rattus_rattus + logArea + logVeg + Species +
+# (Commented out for now)
+
+# seabirds.model.run11 <- brm(bf(Pairs ~ Rattus_rattus + logArea + logNativeVeg + Species +
 #                                  (1|Atoll_Island),
 #                                hu ~ Rattus_rattus),
 #                             data = seabirds,
@@ -150,13 +106,18 @@ seabirds.model.run.scale11 <- brm(bf(Pairs ~ Rattus_rattus + sclogArea + sclogVe
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# Check model out ####
+
+# Load in models if not run above:
+
 load("SNP_ModelOutputs/Seabirds_Habitat_brms.hln.Rdata")
 load("SNP_ModelOutputs/Seabirds_Habitat_brms.scale.hln.Rdata")
 
 # What proportion of the posterior distribution is above 0?
+
 hypothesis(seabirds.model.run.scale11, "Rattus_rattusP<0")
 hypothesis(seabirds.model.run.scale11, "sclogArea>0")
-hypothesis(seabirds.model.run.scale11, "sclogVeg>0")
+hypothesis(seabirds.model.run.scale11, "sclogNativeVeg>0")
 
 tidy(seabirds.model.run11)
 # Here, h_(Intercept) is the intercept for the logistic regression model
@@ -174,10 +135,13 @@ seabirds |>
   count(is_zero) |> 
   mutate(prop = n / sum(n))
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+# Quickly check out rat effect:
+# Predicted pairs (as influenced by rat status):
 conditional_effects(seabirds.model.run11, effects = "Rattus_rattus")
+# Predicted probability of seeing no pairs (as influenced by rat status):
 conditional_effects(seabirds.model.run11, dpar = "hu")
+
+# K-fold validation:
 
 kfold1 <- kfold(seabirds.model.run11, chains = 1)
 kfold1
@@ -185,6 +149,7 @@ plot(kfold1$pointwise)
 # https://vasishth.github.io/bayescogsci/book/ch-cv.html
 
 # PP Check
+
 # Exponential data:
 pp_check(seabirds.model.run11)
 # Logged data:
@@ -194,15 +159,9 @@ bayesplot::ppc_dens_overlay(y = log1p(seabirds$Pairs),
 
 tidy(seabirds.model.run11)
 
-# Predicted pairs (as influenced by rat status):
-conditional_effects(seabirds.model.run11, effects = "Rattus_rattus")
-# Predicted probability of seeing no pairs (as influenced by rat status):
-conditional_effects(seabirds.model.run11, dpar = "hu")
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Cool
+# Cool, save models:
 
 # save(file="SNP_ModelOutputs/Seabirds_Habitat_brms.scale.hln.Rdata", list="seabirds.model.run.scale11")
 # save(file="SNP_ModelOutputs/Seabirds_Habitat_brms.hln.Rdata", list="seabirds.model.run11")
-

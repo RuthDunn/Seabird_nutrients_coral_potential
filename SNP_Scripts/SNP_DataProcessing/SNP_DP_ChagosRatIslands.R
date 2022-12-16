@@ -5,7 +5,7 @@ library(ggplot2)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Load island area and habitat cover data ####
+# Load island area and habitat cover data
 
 # Island areas:
 areas <- read.csv("SNP_Data/Carr_2021_Chagos_islands_info.csv")
@@ -32,6 +32,7 @@ island.data <- island.data[which(island.data$Rats=='P'),]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Write file
+
 write.csv(island.data, "SNP_Data/Processed/ChagosRatIslands.csv")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

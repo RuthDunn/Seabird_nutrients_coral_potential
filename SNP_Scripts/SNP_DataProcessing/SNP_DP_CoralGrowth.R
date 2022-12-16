@@ -5,7 +5,7 @@ library("readxl")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Load UVC data ####
+# Load Casey's coral growth data ####
 
 coral <- read_excel("SNP_Data/Raw data/Coral_Growth_Casey/Chagos_coral_growth_difference.xlsx", sheet = 1)
 
@@ -16,6 +16,8 @@ coral <- as.data.frame(unclass(coral),
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# Load Nick's nitrogen input estimates
+
 nitrogen.input <- read.csv("SNP_Data/Graham_etal_2018_Chagos_Seabirds_Nitrogen.csv")
 
 # Convert all character columns to factors
@@ -24,8 +26,6 @@ nitrogen.input <- as.data.frame(unclass(nitrogen.input),
                                 stringsAsFactors = TRUE)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Combine
 
 # Rename coral df islands
 
@@ -38,6 +38,8 @@ levels(coral$Island)[6] <- "Middle_Brother"
 levels(coral$Island)[7] <- "PB_Ile_Anglaise"
 levels(coral$Island)[8] <- "Sal_Ile_Anglaise"
 levels(coral$Island)[9] <- "Ile_de_la_Passe"
+
+# Combine dfs
 
 coral <- join(coral, nitrogen.input[,c(2, 4, 11)], by = "Island")
 

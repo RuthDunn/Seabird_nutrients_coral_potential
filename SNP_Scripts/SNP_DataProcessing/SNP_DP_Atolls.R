@@ -1,22 +1,16 @@
 rm(list = ls(all = TRUE))
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+library(tidyverse)
 
-# Load data
+# Load raw data:
 
-atoll.data <- read.csv("SNP_Data/Raw data/Islands_InvasiveSpecies_Atolls_Area.csv")
-atoll.data <- atoll.data[,c("Atoll", "IslandArea", "IslandCoas")]
-atoll.data["Atoll"] <- lapply(atoll.data["Atoll"] , factor)
+atoll.data <- read.csv("SNP_Data/Raw data/Islands_InvasiveSpecies_Atolls_Area.csv") %>%
+  select("Atoll", "IslandArea")
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Condense into Atoll-specific values:
 
-# Condense into Atoll-specific values
+atoll.data <- as.data.frame(by(atoll.data$IslandArea,list(atoll.data$Atoll),sum))
 
-Area <- (by(atoll.data$IslandArea,list(atoll.data$Atoll),sum))
-Coastline <- (by(atoll.data$IslandCoas,list(atoll.data$Atoll),sum))
+# Write up:
 
-new <- cbind(Area, Coastline)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-write.csv(new, "SNP_Data/Processed/Tropical_Atolls_Invasives_Areas.csv")
+write.csv(atoll.data, "SNP_Data/Processed/Tropical_Atolls_Invasives_Areas.csv")

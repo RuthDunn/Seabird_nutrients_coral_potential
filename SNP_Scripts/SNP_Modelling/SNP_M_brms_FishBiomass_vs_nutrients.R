@@ -37,21 +37,11 @@ rm(biomass.df, nitrogen.df)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Quick plots: ####
-
-ggplot(data = fish, aes(x = Nitrogen, y = FishBiomass)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-
-ggplot(data = fish, aes(x = log(Nitrogen), y = FishBiomass)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-
-# ggplot(data = ch_2015_div_fish, aes(x = log_bio_kg_ha, y = log(sum_fish_bio_kg_ha))) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-
 # Log both fish biomass and nitrogen input
+
+ggplot(data = fish, aes(x = log(Nitrogen), y = log(FishBiomass))) +
+  geom_point() +
+  geom_smooth(method = "lm")
 
 fish$logNitrogen <- log(fish$Nitrogen)
 fish$scalelogNitrogen <- scale(log(fish$Nitrogen), center = TRUE, scale = TRUE)
@@ -60,7 +50,9 @@ fish$Atoll_Island <- paste(fish$Atoll, fish$Island, sep = "_")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Run model ####
+# Run models ####
+
+# (Commented out for now)
 
 # fishbiomass.model.run.scale <- brm(logFishBiomass ~ scalelogNitrogen + (1|Atoll_Island),
 #                             data = fish,
@@ -74,16 +66,16 @@ fish$Atoll_Island <- paste(fish$Atoll, fish$Island, sep = "_")
 
 # Check it out:
 
-# print(fishbiomass.model.run.scale)
-# bayes_R2(fishbiomass.model.run.scale)
+print(fishbiomass.model.run.scale)
+bayes_R2(fishbiomass.model.run.scale)
 
 # Check diagnositcs:
 
-# plot(fishbiomass.model.run.scale, ask = FALSE)
-# pp_check(fishbiomass.model.run.scale)
+plot(fishbiomass.model.run.scale, ask = FALSE)
+pp_check(fishbiomass.model.run.scale)
 
-# plot(fishbiomass.model.run, ask = FALSE)
-# pp_check(fishbiomass.model.run)
+plot(fishbiomass.model.run, ask = FALSE)
+pp_check(fishbiomass.model.run)
 
 # Cool
 
@@ -94,7 +86,8 @@ fish$Atoll_Island <- paste(fish$Atoll, fish$Island, sep = "_")
 
 # Make predictions ####
 
-# Load models:
+# Load models (if not run above):
+
 load("SNP_ModelOutputs/Fish_Nitrogen_brms.Rdata")
 load("SNP_ModelOutputs/Fish_Nitrogen_brms.scale.Rdata")
 
@@ -102,7 +95,7 @@ load("SNP_ModelOutputs/Fish_Nitrogen_brms.scale.Rdata")
 hypothesis(fishbiomass.model.run.scale, "scalelogNitrogen>0")
 
 # Load predication data:
-pred.data <- read.csv("SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted.csv")
+pred.data <- read.csv("SNP_Data/Processed/Prediction_data/Seabird_NutrientInput_Chagos_Predicted.csv")
 
 # High.nn scenario:
 pred.data.highnn <- aggregate(pred.data$NitrogenInput.high.nn, by = list(pred.data$Atoll_Island), FUN = "sum")
@@ -139,20 +132,7 @@ write.csv(pred.data.lownn, "SNP_Data/Processed/Pred_lownn_FishBiomass_Nitrogen.c
 # Model variable names:
 get_variables(fishbiomass.model.run.scale)
 
-# Plot:
-p2 <- ggplot(as_draws_df(fishbiomass.model.run.scale)) +
-  geom_vline(xintercept = 0, lty = 2) +
-  stat_halfeye(aes(x = b_scalelogNitrogen,  y = 5), point_interval=median_hdi,
-               .width=c(.8,.5),  alpha = .7, fill = "#D1E1EC", fatten_point = 2, slab_alpha = .6) +
-  stat_halfeye(aes(x = b_scalelogNitrogen,  y = 5), point_interval=median_hdi,
-               .width=c(.8,.5),  color = "#01386B", slab_alpha = 0) +
-  xlab("")+
-  ylab("")+
-  theme_light() %+replace% theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.ticks.y = element_blank(), axis.text.y = element_blank())
-
-
-p2.t <- ggplot(as_draws_df(fishbiomass.model.run.scale)) +
+ggplot(as_draws_df(fishbiomass.model.run.scale)) +
   stat_halfeye(aes(y = b_scalelogNitrogen, x = 5), point_interval=median_hdi,
                .width=c(.8,.5),  alpha = .7, fill = "#c8d6fa", fatten_point = 2, slab_alpha = .4) +
   geom_hline(yintercept = 0, lty = 2) +
@@ -164,8 +144,6 @@ p2.t <- ggplot(as_draws_df(fishbiomass.model.run.scale)) +
   theme_light() %+replace% theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                                  axis.ticks.x = element_blank(), axis.text.x = element_blank()) +
   xlab("Effect size")
-
-p2.t
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -188,7 +166,7 @@ ggplot() +
               alpha = .4, fill = "#c8d6fa") +
   geom_jitter(data = pr.Fish.Nitrogen, aes(x = logNitrogen, y = logFishBiomass),
               alpha = 0.6, width = .1) +
-  geom_point(data = pred.data.highnn, aes(x = logNitrogen, y = Estimate))
+  geom_point(data = pred.data.highnn, aes(x = logNitrogen, y = Estimate)) +
 
   geom_line(data = ce.Fish.Nitrogen, aes(x = logNitrogen, y = estimate__),
             color = "#648FFF") +
@@ -200,14 +178,3 @@ ggplot() +
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
         legend.position='none')
-
-p1
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Save plots ####
-
-# A) Left and right?
-p1 + p2.t + plot_layout(widths = c(3,1))
-
-ggsave("Plots/Fish_Nitrogen_ppt.png", width = 5, height = 4)

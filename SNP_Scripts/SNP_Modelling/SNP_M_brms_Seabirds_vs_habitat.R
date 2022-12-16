@@ -153,6 +153,11 @@ seabirds.model.run.scale11 <- brm(bf(Pairs ~ Rattus_rattus + sclogArea + sclogVe
 load("SNP_ModelOutputs/Seabirds_Habitat_brms.hln.Rdata")
 load("SNP_ModelOutputs/Seabirds_Habitat_brms.scale.hln.Rdata")
 
+# What proportion of the posterior distribution is above 0?
+hypothesis(seabirds.model.run.scale11, "Rattus_rattusP<0")
+hypothesis(seabirds.model.run.scale11, "sclogArea>0")
+hypothesis(seabirds.model.run.scale11, "sclogVeg>0")
+
 tidy(seabirds.model.run11)
 # Here, h_(Intercept) is the intercept for the logistic regression model
 # used for the hurdle process
@@ -183,7 +188,7 @@ plot(kfold1$pointwise)
 # Exponential data:
 pp_check(seabirds.model.run11)
 # Logged data:
-pred <- posterior_predict(seabirds.model.run.scale1)
+pred <- posterior_predict(seabirds.model.run.scale11)
 bayesplot::ppc_dens_overlay(y = log1p(seabirds$Pairs), 
                             yrep = log1p(pred[1:10,]))
 

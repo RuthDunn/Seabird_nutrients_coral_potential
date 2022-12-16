@@ -86,6 +86,8 @@ coral$Atoll_Island <- paste(coral$Atoll, coral$Island, sep = "_")
 load("SNP_ModelOutputs/Coral_Nitrogen_brms.scale.Rdata")
 load("SNP_ModelOutputs/Coral_Nitrogen_brms.Rdata")
 
+hypothesis(coralgrowth.model.run.scale, "scalelogNitrogen>0")
+
 # Load predication data:
 pred.data <- read.csv("SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted.csv")
 

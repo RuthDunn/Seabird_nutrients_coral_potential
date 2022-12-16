@@ -86,6 +86,9 @@ fish$Atoll_Island <- paste(fish$Atoll, fish$Island, sep = "_")
 load("SNP_ModelOutputs/Grazing_Nitrogen_brms.Rdata")
 load("SNP_ModelOutputs/Grazing_Nitrogen_brms.scale.Rdata")
 
+# What proportion of the posterior distribution is above 0?
+hypothesis(grazing.model.run.scale, "scalelogNitrogen>0")
+
 # Load predication data:
 pred.data <- read.csv("SNP_Data/Processed/Seabird_NutrientInput_Predicted.csv")
 

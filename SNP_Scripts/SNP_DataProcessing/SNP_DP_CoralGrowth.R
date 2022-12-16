@@ -2,6 +2,7 @@ rm(list = ls(all = TRUE))
 
 library(plyr)
 library("readxl")
+library(tidyverse)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -41,7 +42,8 @@ levels(coral$Island)[9] <- "Ile_de_la_Passe"
 
 # Combine dfs
 
-coral <- join(coral, nitrogen.input[,c(2, 4, 11)], by = "Island")
+coral <- join(coral, nitrogen.input[,c(2, 4, 11)], by = "Island") %>%
+  select("Atoll", "Island", "diff_SA_year", "kg_N_ha_yr")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

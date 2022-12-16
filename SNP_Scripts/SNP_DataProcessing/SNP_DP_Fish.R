@@ -1,5 +1,7 @@
 rm(list = ls(all = TRUE))
 
+library(tidyverse)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Load UVC data ####
@@ -28,7 +30,8 @@ levels(nitrogen.input$Island)[1] <- "Eagle"
 
 # Combine
 
-fish <- join(fish, nitrogen.input[,c(2, 4, 11)], by = "Island")
+fish <- join(fish, nitrogen.input[,c(2, 4, 11)], by = "Island") %>%
+  select("Atoll", "Island", "Transect", "Biomass", "kg_N_ha_yr")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

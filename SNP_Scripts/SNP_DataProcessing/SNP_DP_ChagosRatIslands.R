@@ -2,6 +2,7 @@ rm(list = ls(all = TRUE))
 
 library(plyr)
 library(ggplot2)
+library(tidyverse)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -27,7 +28,8 @@ rm(areas, habitat)
 
 levels(as.factor(island.data$Rats))
 
-island.data <- island.data[which(island.data$Rats=='P'),]
+island.data <- island.data[which(island.data$Rats=='P'),] %>%
+  select("Island", "Atoll", "Rats", "Size_Ha", "Atoll_Island", "NonNativeForest_p")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

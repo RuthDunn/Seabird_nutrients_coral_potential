@@ -46,10 +46,10 @@ seabirds <- read.csv("SNP_Data/Processed/Seabird_NutrientInput_Predicted_OtherAt
 seabirds$Atoll <- seabirds$Atoll_Island
 
 # Calculate total nitrogen input (sum of the 3 species)
-seabirds <- seabirds[,c("Atoll_Island", "Species", "Estimate", "NitrogenInput.perArea")]
+seabirds <- seabirds[,c("Atoll_Island", "Species", "Estimate", "tot.Nitrogen")]
 # Long -> Wide
 birds <- spread(seabirds[,c("Atoll_Island", "Species", "Estimate")], Species, Estimate)
-nitrogen <- spread(seabirds[,c("Atoll_Island", "Species", "NitrogenInput.perArea")], Species, NitrogenInput.perArea)
+nitrogen <- spread(seabirds[,c("Atoll_Island", "Species", "tot.Nitrogen")], Species, tot.Nitrogen)
 
 # B) Nitrogen
 coralfunc <- read.csv("SNP_Data/Processed/Pred_CoralFunction_OtherAtolls.csv")
@@ -106,9 +106,9 @@ p1 <- ggplot() +
           aes(colour = TotalNitrogen, size = seabirds), alpha = 0.7) +
   
   # Make pretty
-  scale_colour_gradient2(low = "#648FFF", mid = "#DC267F", high = "#FFB000", midpoint = 30,
-                         # name = expression("Seabird-derived nitrogen input (kg year"^-1*")"),
-                         name = expression("Seabird-derived nitrogen input (kg year"^-1*"ha"^-1*")"),
+  scale_colour_gradient2(low = "#648FFF", mid = "#DC267F", high = "#FFB000", midpoint = 15000,
+                         name = expression("Seabird-derived nitrogen input (kg year"^-1*")"),
+                         # name = expression("Seabird-derived nitrogen input (kg year"^-1*"ha"^-1*")"),
                          labels = scales::comma) +
   scale_size(labels = scales::comma, name = "Seabird abundance (number of pairs)") +
   # scale_alpha(range = c(0.4, 1)) +

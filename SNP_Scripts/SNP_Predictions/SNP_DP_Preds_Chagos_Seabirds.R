@@ -17,7 +17,10 @@ islands <- read.csv("SNP_Data/Processed/ChagosRatIslands.csv")
 islands <- islands[,-1]
 
 # Remove DG main island:
+
 islands <- islands[-1,]
+
+# Load model of the influences of habitat on seabird abundance:
 
 load("SNP_ModelOutputs/Seabirds_Habitat_brms.hln.Rdata")
 
@@ -46,7 +49,9 @@ islands.long$id <- as.numeric(rownames(islands.long))
 # (the lower quartile of non plantation forest cover in Chagos: 26%)
 islands.long$logVeg <- log(25)
 
-predictions1 <- exp(fitted(seabirds.model.run, newdata = islands.long[,c(7,9:13)], allow_new_levels = TRUE, dpar = "mu"))
+predictions1 <- exp(fitted(seabirds.model.run, newdata = islands.long[,c("Atoll_Island", "Species", "Size_Ha",
+                                                                         "Rattus_rattus", "logArea", "logVeg")],
+                           allow_new_levels = TRUE, dpar = "mu"))
 
 predictions1 <- cbind(islands.long,predictions1)
 
@@ -54,7 +59,9 @@ predictions1 <- cbind(islands.long,predictions1)
 # (the lower quartile of non plantation forest cover in Chagos: 73%)
 islands.long$logVeg <- log(75)
 
-predictions2 <- exp(fitted(seabirds.model.run, newdata = islands.long[,c(7,9:13)], allow_new_levels = TRUE, dpar = "mu"))
+predictions2 <- exp(fitted(seabirds.model.run, newdata = islands.long[,c("Atoll_Island", "Species", "Size_Ha",
+                                                                         "Rattus_rattus", "logArea", "logVeg")],
+                           allow_new_levels = TRUE, dpar = "mu"))
 
 predictions2 <- cbind(islands.long,predictions2)
 

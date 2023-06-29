@@ -3,7 +3,6 @@ rm(list = ls(all = TRUE))
 library(plyr)
 library(ggplot2)
 library(ape)
-library(MCMCglmm)
 library(data.table)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -22,9 +21,9 @@ seabirds <- reshape2::melt(data = seabirds,
                            value.name = "Census")
 
 # Load predicted seabird numbers:
-pred.high.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNForest.hln.csv")
+pred.high.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNForest_priors.csv")
 pred.high.nn <- pred.high.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
-pred.low.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest.hln.csv")
+pred.low.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest_priors.csv")
 pred.low.nn <- pred.low.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
 
 # Add predicted values
@@ -66,11 +65,11 @@ rm(pred.high.nn, pred.low.nn)
 
 # 1) Island area:
 areas <- read.csv("SNP_Data/Carr_2021_Chagos_islands_info.csv")
-areas$Atoll_Island <- as.factor(paste(areas$Atoll, areas$ï..Island, sep = "_"))
-# Revalue Peros_Banhos_Anglaise (from Peros_Banhos_Anglais)
+areas$Atoll_Island <- as.factor(paste(areas$Atoll, areas$Island, sep = "_"))
+# Revalue Peros_Banhos_Anglaise (from Peros_Banhos_Anglais):
 levels(areas$Atoll_Island)[levels(areas$Atoll_Island) == "Peros_Banhos_Anglais"] <- "Peros_Banhos_Anglaise"
 seabirds <- join(seabirds, areas[,c("Atoll_Island", "Size_Ha")], by = "Atoll_Island")
-seabirds <- seabirds[complete.cases(seabirds), ]
+# seabirds <- seabirds[complete.cases(seabirds), ]
 rm(areas)
 
 # 2) Seabird breeding season length
@@ -95,27 +94,34 @@ seabirds$Defecation.rate <- (26.4 * (seabirds$Mass*1000)^0.63)/1150^0.63
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# NI[i,j] = N[g] * Dr[i] * Bd[i,j] * Res[i,j] / IsArea[j]
-# Include conversion to kg/ha/year:
+# NI[i,j] = N[g] * Dr[i] * Bd[i,j] * Res[i,j]
+# Include conversion to kg/year:
 
 # Adjust Bd (number of days on the island) to account for time away whilst foraging
 # Sooty tern - one bird foraging - assume one adult present
 # Red-footed booby - one adult always present, one away over night - assume 1.5 birds present
 # Lesser noddy - short foraging trips, don't adjust numbers - assume 2 birds present
 
-seabirds$NitrogenInput.Current <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Census * seabirds$Season.length)/
-  seabirds$Size_Ha
-seabirds$NitrogenInput.high.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.high.nn * seabirds$Season.length)/
-  seabirds$Size_Ha
-seabirds$NitrogenInput.low.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.low.nn * seabirds$Season.length)/
-  seabirds$Size_Ha
+seabirds$NitrogenInput.Current <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Census * seabirds$Season.length)
+seabirds$NitrogenInput.high.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.high.nn * seabirds$Season.length)
+seabirds$NitrogenInput.low.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.low.nn * seabirds$Season.length)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Check that this all looks okay:
-test <- aggregate(seabirds$NitrogenInput.Current, by = list(seabirds$Atoll_Island), FUN = "sum")
-hist(test$x)
-rm(test)
+
+library(tidyverse)
+
+test <- seabirds %>%
+  group_by(Atoll_Island) %>%
+  summarise(CurrentN = sum(NitrogenInput.Current),
+            Lownn.N = sum(NitrogenInput.low.nn),
+            Highnn.N = sum(NitrogenInput.high.nn),
+            Area = mean(Size_Ha))
+
+mean(test$CurrentN)/1000
+mean(test$Highnn.N)/1000
+mean(test$Lownn.N)/1000
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -132,5 +138,5 @@ nlevels(as.factor(seabirds.rats$Atoll_Island))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-write.csv(seabirds.rats, "SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted_RatIslandsOnly.csv")
-write.csv(seabirds, "SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted.csv")
+write.csv(seabirds.rats, "SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted_RatIslandsOnly_priors.csv")
+write.csv(seabirds, "SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted_priors.csv")

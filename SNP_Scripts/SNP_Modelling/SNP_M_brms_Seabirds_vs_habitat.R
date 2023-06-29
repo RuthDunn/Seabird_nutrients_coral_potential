@@ -42,15 +42,16 @@ seabirds <- gather(seabirds, Species, Pairs, Sula_sula:Anous_tenuirostris, facto
 
 # Island size
 
-ggplot(data = seabirds, aes(x = log(Size_Ha), y = log(Pairs+1), fill = Rattus_rattus)) +
+ggplot(data = seabirds[which(seabirds$Pairs > 0.5),], aes(x = log(Size_Ha), y = log(Pairs), fill = Rattus_rattus)) +
   geom_point() +
   geom_smooth(method = "lm")
 
 # Veg cover
 
-ggplot(data = seabirds, aes(x = log(100-NonNativeForest_p), y = log(Pairs+1), fill = Rattus_rattus)) +
+ggplot(data = seabirds[which(seabirds$Pairs > 0.5),], aes(x = (100-NonNativeForest_p), y = log(Pairs), fill = Rattus_rattus)) +
   geom_point() +
-  geom_smooth(method = "lm")
+  geom_smooth(method = "lm") +
+  xlab("Native forest (%)")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -60,108 +61,132 @@ ggplot(data = seabirds, aes(x = log(100-NonNativeForest_p), y = log(Pairs+1), fi
 
 seabirds$logArea <- log(seabirds$Size_Ha)
 seabirds$sclogArea <- scale(log(seabirds$Size_Ha), center = TRUE, scale = TRUE)
+# attr(,"scaled:center")
+# [1] 2.710195 # (mean)
+# attr(,"scaled:scale")
+# [1] 1.832027 # (std dev)
 
 seabirds$NativeVeg <- 100-seabirds$NonNativeForest_p
-seabirds$logNativeVeg <- log(100-seabirds$NonNativeForest_p)
-seabirds$sclogNativeVeg <- scale(log(100-seabirds$NonNativeForest_p), center = TRUE, scale = TRUE)
+seabirds$scNativeVeg <- scale(100-seabirds$NonNativeForest_p, center = TRUE, scale = TRUE)
+# attr(,"scaled:center")
+# [1] 43.32374
+# attr(,"scaled:scale")
+# [1] 28.6727
 
-# Check for zero-inflated data:
+# Data are zero-inflated:
 
 hist(seabirds$Pairs)
 
-# Perform transformations:
-seabirds$logPairs <- log(seabirds$Pairs+1)
-seabirds$Pairs.p1 <- seabirds$Pairs+1
+hist(log(seabirds[which(seabirds$Pairs > 1),"Pairs"]))
+
+# Use a hurdle log normal model
+
+# https://www.andrewheiss.com/blog/2022/05/09/hurdle-lognormal-gaussian-brms/#3-hurdle-lognormal-model
+
+# Family: hurdle_lognormal 
+# Links: mu = identity; sigma = identity; hu = identity 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Run model ####
 
-# (Commented out for now)
+seabirds.model.sc <- brm(bf(Pairs ~ Rattus_rattus + sclogArea + scNativeVeg + Species +
+                              (1|Atoll_Island),
+                            hu ~ Rattus_rattus),
+                         data = seabirds,
+                         family = hurdle_lognormal(),
+                         iter = 3000, warmup = 1000, chains = 4, seed = 1234, silent = 2,
+                         prior = c(prior(normal(6,1), class = Intercept),                           # RFB population intercept prior
+                                   prior(normal(1,0.5), coef = "SpeciesOnychoprion_fuscatus"),      # Expected difference in sooty tern numbers (in comparison to RFBs)
+                                   prior(normal(0,0.5), coef = "SpeciesAnous_tenuirostris"),        # Expected difference in lesser noddies numbers (in comparison to RFBs)
+                                   prior(normal(-1,0.5), coef = "Rattus_rattusP"),                  # -ve influence of rats
+                                   prior(normal(1,0.5), coef = "sclogArea"),                        # +ve influence of area
+                                   prior(normal(1,0.5), coef = "scNativeVeg"),                      # +ve influence of native veg
+                                   prior(normal(-0.4, 0.05), class = Intercept, dpar = "hu"),       # 46% of the data is 0s, so let's go with ~ 40% caused by rats
+                                   prior(normal(1,0.5), coef = "Rattus_rattusP", dpar = "hu")))     # +ve influence of rats on the data being 0
 
-# seabirds.model.run.scale11 <- brm(bf(Pairs ~ Rattus_rattus + sclogArea + sclogNativeVeg + Species +
-#                                        (1|Atoll_Island),
-#                                      hu ~ Rattus_rattus),
-#                                  data = seabirds,
-#                                  family = hurdle_lognormal(),
-#                                  iter = 3000, warmup = 1000, chains = 4, seed = 1234, silent = 2,
-#                                  save_all_pars = T)
+plot(seabirds.model.sc)
 
-# 9 is the best one:
-# Family: hurdle_lognormal 
-# Links: mu = identity; sigma = identity; hu = identity 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# https://www.andrewheiss.com/blog/2022/05/09/hurdle-lognormal-gaussian-brms/#3-hurdle-lognormal-model
+# Proportion of 0s ####
 
-# Run with cmdstanr (faster + more modern than rstan)
+hu_intercept <- tidy(seabirds.model.sc) |> 
+  filter(term == "hu_(Intercept)") |> 
+  pull(estimate)
 
-# (Commented out for now)
+# Logit scale intercept
+hu_intercept
+# b_hu_Intercept 
+# -1.127355 
 
-# seabirds.model.run11 <- brm(bf(Pairs ~ Rattus_rattus + logArea + logNativeVeg + Species +
-#                                  (1|Atoll_Island),
-#                                hu ~ Rattus_rattus),
-#                             data = seabirds,
-#                             family = hurdle_lognormal(),
-#                             chains = 4, iter = 3000, warmup = 1000, seed = 1234,  silent = 2)
+# Transformed to a probability/proportion
+plogis(hu_intercept)
+# b_hu_Intercept 
+# 0.2446496 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# LOO validation
+# https://mc-stan.org/loo/articles/online-only/faq.html
+
+loo1 <- loo(seabirds.model.sc, save_psis = TRUE)
+
+print(loo1)
+plot(loo1, label_points = T)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Check model out ####
 
-# Load in models if not run above:
+# PP Check
 
-load("SNP_ModelOutputs/Seabirds_Habitat_brms.hln.Rdata")
-load("SNP_ModelOutputs/Seabirds_Habitat_brms.scale.hln.Rdata")
+# https://mc-stan.org/bayesplot/articles/graphical-ppcs.html
 
-# What proportion of the posterior distribution is above 0?
+# Exponential data:
+# Logged data:
+color_scheme_set("gray")
+pred <- posterior_predict(seabirds.model.sc)
+bayesplot::ppc_dens_overlay(y = log1p(seabirds$Pairs), 
+                            yrep = log1p(pred[1:10,])) + theme_light() + ylim(c(0,0.18))
 
-hypothesis(seabirds.model.run.scale11, "Rattus_rattusP<0")
-hypothesis(seabirds.model.run.scale11, "sclogArea>0")
-hypothesis(seabirds.model.run.scale11, "sclogNativeVeg>0")
-
-tidy(seabirds.model.run11)
+tidy(seabirds.model.sc, conf.method = "HPDinterval", conf.level = 0.95)
 # Here, h_(Intercept) is the intercept for the logistic regression model
 # used for the hurdle process
 
-# Get proportion of zeros:
-hu_intercept <- tidy(seabirds.model.run11) |> 
-  filter(term == "hu_(Intercept)") |> 
-  pull(estimate)
-plogis(hu_intercept)
-
-# Confirm this:
-seabirds$is_zero <- ifelse(seabirds$Pairs == 0, TRUE, FALSE)
-seabirds |> 
-  count(is_zero) |> 
-  mutate(prop = n / sum(n))
-
 # Quickly check out rat effect:
 # Predicted pairs (as influenced by rat status):
-conditional_effects(seabirds.model.run11, effects = "Rattus_rattus")
-# Predicted probability of seeing no pairs (as influenced by rat status):
-conditional_effects(seabirds.model.run11, dpar = "hu")
+conditional_effects(seabirds.model.sc)
+conditional_effects(seabirds.model.sc, dpar = "hu")
 
-# K-fold validation:
+# What proportion of the posterior distribution is above 0?
 
-kfold1 <- kfold(seabirds.model.run11, chains = 1)
-kfold1
-plot(kfold1$pointwise)
-# https://vasishth.github.io/bayescogsci/book/ch-cv.html
+hypothesis(seabirds.model.sc, "sclogArea>0")
+hypothesis(seabirds.model.sc, "scNativeVeg>0")
 
-# PP Check
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Exponential data:
-pp_check(seabirds.model.run11)
-# Logged data:
-pred <- posterior_predict(seabirds.model.run.scale11)
-bayesplot::ppc_dens_overlay(y = log1p(seabirds$Pairs), 
-                            yrep = log1p(pred[1:10,]))
+# Save model with variables not scaled & centred, to help with predictions ####
 
-tidy(seabirds.model.run11)
+seabirds.model <- brm(bf(Pairs ~ Rattus_rattus + logArea + NativeVeg + Species +
+                              (1|Atoll_Island),
+                            hu ~ Rattus_rattus),
+                         data = seabirds,
+                         family = hurdle_lognormal(),
+                         iter = 3000, warmup = 1000, chains = 4, seed = 1234, silent = 2,
+                         prior = c(prior(normal(6,1), class = Intercept),                           # RFB population intercept prior
+                                   prior(normal(1,0.5), coef = "SpeciesOnychoprion_fuscatus"),      # Expected difference in sooty tern numbers (in comparison to RFBs)
+                                   prior(normal(0,0.5), coef = "SpeciesAnous_tenuirostris"),        # Expected difference in lesser noddies numbers (in comparison to RFBs)
+                                   prior(normal(-1,0.5), coef = "Rattus_rattusP"),                  # -ve influence of rats
+                                   prior(normal(1,0.5), coef = "logArea"),                          # +ve influence of area
+                                   prior(normal(1,0.5), coef = "NativeVeg"),                        # +ve influence of native veg
+                                   prior(normal(-0.4, 0.05), class = Intercept, dpar = "hu"),       # 46% of the data is 0s, so let's go with ~ 40% caused by rats
+                                   prior(normal(1,0.5), coef = "Rattus_rattusP", dpar = "hu")))     # +ve influence of rats on the data being 0
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Cool, save models:
 
-# save(file="SNP_ModelOutputs/Seabirds_Habitat_brms.scale.hln.Rdata", list="seabirds.model.run.scale11")
-# save(file="SNP_ModelOutputs/Seabirds_Habitat_brms.hln.Rdata", list="seabirds.model.run11")
+save(file="SNP_ModelOutputs/Seabirds_Habitat_brms_priors_sc.Rdata", list="seabirds.model.sc")
+save(file="SNP_ModelOutputs/Seabirds_Habitat_brms_priors.Rdata", list="seabirds.model")

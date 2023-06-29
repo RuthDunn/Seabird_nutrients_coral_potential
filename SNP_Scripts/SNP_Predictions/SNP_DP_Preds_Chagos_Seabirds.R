@@ -22,12 +22,7 @@ islands <- islands[-1,]
 
 # Load model of the influences of habitat on seabird abundance:
 
-load("SNP_ModelOutputs/Seabirds_Habitat_brms.hln.Rdata")
-
-seabirds.model.run <- seabirds.model.run11
-rm(seabirds.model.run11)
-
-# pp_check(seabirds.model.run)
+load("SNP_ModelOutputs/Seabirds_Habitat_brms_priors.Rdata")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -47,20 +42,20 @@ islands.long$id <- as.numeric(rownames(islands.long))
 
 # 1) If we eradicate rats but keep high proportions of plantation forest
 # (the lower quartile of non plantation forest cover in Chagos: 26%)
-islands.long$logVeg <- log(25)
+islands.long$NativeVeg <- 25
 
-predictions1 <- exp(fitted(seabirds.model.run, newdata = islands.long[,c("Atoll_Island", "Species", "Size_Ha",
-                                                                         "Rattus_rattus", "logArea", "logVeg")],
+predictions1 <- exp(fitted(seabirds.model, newdata = islands.long[,c("Atoll_Island", "Species",
+                                                                         "Rattus_rattus", "logArea", "NativeVeg")],
                            allow_new_levels = TRUE, dpar = "mu"))
 
 predictions1 <- cbind(islands.long,predictions1)
 
 # 2) If we eradicate rats but keep high proportions of plantation forest
 # (the lower quartile of non plantation forest cover in Chagos: 73%)
-islands.long$logVeg <- log(75)
+islands.long$NativeVeg <- 75
 
-predictions2 <- exp(fitted(seabirds.model.run, newdata = islands.long[,c("Atoll_Island", "Species", "Size_Ha",
-                                                                         "Rattus_rattus", "logArea", "logVeg")],
+predictions2 <- exp(fitted(seabirds.model, newdata = islands.long[,c("Atoll_Island", "Species",
+                                                                         "Rattus_rattus", "logArea", "NativeVeg")],
                            allow_new_levels = TRUE, dpar = "mu"))
 
 predictions2 <- cbind(islands.long,predictions2)
@@ -70,8 +65,7 @@ predictions2 <- cbind(islands.long,predictions2)
 ggplot(predictions1, aes(x = Atoll_Island, y = (Estimate), ymin = (Q2.5), ymax = (Q97.5))) +
   geom_point() +
   geom_errorbar() +
-  facet_grid(Species~.) +
-  scale_y_continuous(labels = scales::comma)
+  facet_grid(Species~.)
 
 ggplot(predictions1, aes(x = Estimate)) + geom_histogram() + facet_grid(Species~.)
 ggplot(predictions1, aes(x = Q97.5)) + geom_histogram() + facet_grid(Species~.)
@@ -80,8 +74,7 @@ ggplot(predictions1, aes(x = Q2.5)) + geom_histogram() + facet_grid(Species~.)
 ggplot(predictions2, aes(x = Atoll_Island, y = (Estimate), ymin = (Q2.5), ymax = (Q97.5))) +
   geom_point() +
   geom_errorbar() +
-  facet_grid(Species~.) +
-  scale_y_continuous(labels = scales::comma)
+  facet_grid(Species~.)
 
 ggplot(predictions2, aes(x = Estimate)) + geom_histogram() + facet_grid(Species~.)
 ggplot(predictions2, aes(x = Q97.5)) + geom_histogram() + facet_grid(Species~.)
@@ -89,5 +82,5 @@ ggplot(predictions2, aes(x = Q2.5)) + geom_histogram() + facet_grid(Species~.)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-write.csv(predictions1, "SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNForest.hln.csv")
-write.csv(predictions2, "SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest.hln.csv")
+write.csv(predictions1, "SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNForest_priors.csv")
+write.csv(predictions2, "SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest_priors.csv")

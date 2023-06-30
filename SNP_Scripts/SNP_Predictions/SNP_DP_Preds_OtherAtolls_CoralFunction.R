@@ -13,10 +13,10 @@ library(jtools)
 
 # Load models ####
 
-load("SNP_ModelOutputs/Coral_Nitrogen_brms.Rdata")
-load("SNP_ModelOutputs/Erosion_Nitrogen_brms.Rdata")
-load("SNP_ModelOutputs/Grazing_Nitrogen_brms.Rdata")
-load("SNP_ModelOutputs/Fish_Nitrogen_brms.Rdata")
+load("SNP_ModelOutputs/CoralGrowth_Nitrogen_c.Rdata")
+load("SNP_ModelOutputs/Erosion_Nitrogen_c.Rdata")
+load("SNP_ModelOutputs/Grazing_Nitrogen_c.Rdata")
+load("SNP_ModelOutputs/Fish_Nitrogen_c.Rdata")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -32,18 +32,21 @@ pred.data$NitrogenInput <- pred.data$Anous_tenuirostris + pred.data$Onychoprion_
 
 pred.data$logNitrogen <- log(pred.data$NitrogenInput)
 
+# Center logNitrogen data around 1.86
+pred.data$clogNitrogen <- pred.data$logNitrogen - 1.86
+
 pred.data <- pred.data[,c("Atoll_Island", "logNitrogen")]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Make predictions ####
 
-coral <- as.data.frame(predict(coralgrowth.model.run, newdata = pred.data, allow_new_levels = TRUE))
-fish <- as.data.frame(predict(fishbiomass.model.run, newdata = pred.data, allow_new_levels = TRUE))
-graz <- as.data.frame(predict(grazing.model.run, newdata = pred.data, allow_new_levels = TRUE))
-eros <- as.data.frame(predict(erosion.model.run, newdata = pred.data, allow_new_levels = TRUE))
+coral <- as.data.frame(predict(coralgrowth.model.run.center, newdata = pred.data, allow_new_levels = TRUE))
+fish <- as.data.frame(predict(fishbiomass.model.run.center, newdata = pred.data, allow_new_levels = TRUE))
+graz <- as.data.frame(predict(grazing.model.run.center, newdata = pred.data, allow_new_levels = TRUE))
+eros <- as.data.frame(predict(erosion.model.run.center, newdata = pred.data, allow_new_levels = TRUE))
 
-rm(coralgrowth.model.run, erosion.model.run, grazing.model.run, fishbiomass.model.run)
+rm(coralgrowth.model.run.center, fishbiomass.model.run.center, grazing.model.run.center, erosion.model.run.center)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -73,4 +76,14 @@ write.csv(pred.data, "SNP_Data/Processed/Pred_CoralFunction_OtherAtolls.csv")
 
 # Summary stats for ms
 
-exp(max(pred.data$coralgrowth))
+coral_max <- pred.data[which.max(pred.data$coralgrowth), ]
+exp(coral_max[,c("coralgrowth", "coralgrowth.low", "coralgrowth.high")])
+
+fish_max <- pred.data[which.max(pred.data$fishbiomass), ]
+exp(fish_max[,c("fishbiomass", "fishbiomass.low", "fishbiomass.high")])
+
+graz_max <- pred.data[which.max(pred.data$grazing), ]
+exp(graz_max[,c("grazing", "grazing.low", "grazing.high")])
+
+eros_max <- pred.data[which.max(pred.data$erosion), ]
+exp(eros_max[,c("erosion", "erosion.low", "erosion.high")])

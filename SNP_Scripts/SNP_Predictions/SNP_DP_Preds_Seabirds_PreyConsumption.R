@@ -22,9 +22,9 @@ seabirds <- reshape2::melt(data = seabirds,
                            value.name = "Census")
 
 # Load predicted seabird numbers:
-pred.high.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNForest.hln.csv")
+pred.high.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNForest_priors.csv")
 pred.high.nn <- pred.high.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
-pred.low.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest.hln.csv")
+pred.low.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest_priors.csv")
 pred.low.nn <- pred.low.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
 
 # Add predicted values
@@ -77,7 +77,7 @@ seabirds<-seabirds[complete.cases(seabirds),]
 
 # Load in seabird FMR calculator model :) ####
 
-load(file = "C:/Users/ruth-/Dropbox/PhD/Project/Breeding Energetics - Meta Analysis/FMR_meta_analysis/myapp/data/model4.rda")
+load(file = "C:/Users/Ruth/Dropbox/PhD/Project/Breeding Energetics - Meta Analysis/FMR_meta_analysis/myapp/data/model4.rda")
 
 # Create new column of bird species that match those in the model
 seabirds$Species_Model <- paste("animal.", seabirds$Species, sep = "")

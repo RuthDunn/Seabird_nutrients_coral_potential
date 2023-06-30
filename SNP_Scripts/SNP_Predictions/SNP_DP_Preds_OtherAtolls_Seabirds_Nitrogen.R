@@ -6,6 +6,8 @@ library(ape)
 library(MCMCglmm)
 library(data.table)
 
+options(scipen = 999)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Data loads ####
@@ -13,9 +15,6 @@ library(data.table)
 # Load predicted seabird numbers:
 preds <- read.csv("SNP_ModelOutputs/OtherAtolls_Seabird_Predictions_LowNNForest.hln.csv")
 head(preds)
-
-# Long to wide:
-# preds <- gather(preds[,-c(1,7)], Species, Estimate, Anous_tenuirostris:Sula_sula)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -41,14 +40,7 @@ head(preds)
 #       - Seabird mass
 
 # 1) Island area:
-areas <- read.csv("SNP_Data/Processed/Tropical_Atolls_Invasives_Areas.csv")
-areas$Atoll_Island <- areas$Atoll
-# convert from km2 to ha
-areas$Area <- areas$Area_km2 * 100
-preds <- join(preds, areas[,c("Atoll_Island", "Area")], by = "Atoll_Island")
-tot.area.ha <- colSums(areas[7])
-rm(areas)
-
+preds$Area_ha <- exp(preds$logArea)
 
 # 2) Seabird breeding season length
 # 3) Seabird mass
@@ -73,7 +65,6 @@ seabirds$Defecation.rate <- (26.4 * (seabirds$Mass*1000)^0.63)/1150^0.63
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 # NI[i,j] = N[g] * Dr[i] * Bd[i,j] * Res[i,j] / IsArea[j]
 # Ng = nitrogen content of guano
 # Dr = defecation rate (in g) per species (i) of bird per day
@@ -96,21 +87,36 @@ seabirds$Estimate.adjusted.high <- ifelse(seabirds$Species == "Sula_sula", seabi
                                             seabirds$Q97.5))
 
 # (Adjust defecation rate in g to kg here too)
-seabirds$NitrogenInput.perArea <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Estimate.adjusted * seabirds$Season.length)/
-  seabirds$Area
-seabirds$NitrogenInput.perArea.low <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Estimate.adjusted.low * seabirds$Season.length)/
-  seabirds$Area
-seabirds$NitrogenInput.perArea.high <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Estimate.adjusted.high * seabirds$Season.length)/
-  seabirds$Area
+seabirds$NitrogenInput <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Estimate.adjusted * seabirds$Season.length)
+seabirds$NitrogenInput.low <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Estimate.adjusted.low * seabirds$Season.length)
+seabirds$NitrogenInput.high <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Estimate.adjusted.high * seabirds$Season.length)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Total nitrogen input:
-seabirds$tot.Nitrogen <- seabirds$NitrogenInput.perArea * seabirds$Area
-seabirds$tot.Nitrogen.low <- seabirds$NitrogenInput.perArea.low * seabirds$Area
-seabirds$tot.Nitrogen.high <- seabirds$NitrogenInput.perArea.high * seabirds$Area
+# Check that this all looks okay:
+
+library(tidyverse)
+
+test <- seabirds %>%
+  group_by(Atoll_Island) %>%
+  summarise(CurrentN = sum(NitrogenInput),
+            Lownn.N = sum(NitrogenInput.low),
+            Highnn.N = sum(NitrogenInput.high),
+            Area = mean(Area_ha))
+
+# Vals in tonnes for the text:
+
+mean(test$CurrentN)/1000
+mean(test$Highnn.N)/1000
+mean(test$Lownn.N)/1000
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Ajust for area
+
+seabirds$NitrogenInput.perArea <- seabirds$NitrogenInput / seabirds$Area
+seabirds$NitrogenInput.perArea.low <- seabirds$NitrogenInput.low / seabirds$Area
+seabirds$NitrogenInput.perArea.high <- seabirds$NitrogenInput.high / seabirds$Area
 
 write.csv(seabirds, "SNP_Data/Processed/Seabird_NutrientInput_Predicted_OtherAtolls.csv")
 
-# In tonnes:
-colSums(seabirds[,c("tot.Nitrogen", "tot.Nitrogen.low", "tot.Nitrogen.high")])/1000

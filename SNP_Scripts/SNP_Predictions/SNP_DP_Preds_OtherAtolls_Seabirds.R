@@ -84,3 +84,13 @@ predictions.lownn$Estimate/exp(predictions.lownn$logArea)
 
 write.csv(predictions.highnn, "SNP_ModelOutputs/OtherAtolls_Seabird_Predictions_HighNNForest.hln.csv")
 write.csv(predictions.lownn, "SNP_ModelOutputs/OtherAtolls_Seabird_Predictions_LowNNForest.hln.csv")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Summary stats for ms
+
+birds_max <- predictions.lownn[which.max(predictions.lownn$Estimate), ]
+birds_max
+
+area_small <- predictions.lownn[which.min(predictions.lownn$logArea), ]
+area_small

@@ -130,9 +130,9 @@ test <- seabirds %>%
             Highnn.N = sum(NitrogenInput.high.nn),
             Area = mean(Size_Ha))
 
-mean(test$CurrentN)/1000
-mean(test$Highnn.N)/1000
-mean(test$Lownn.N)/1000
+sum(test$CurrentN)/1000
+sum(test$Highnn.N)/1000
+sum(test$Lownn.N)/1000
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1,13 +1,8 @@
 rm(list = ls(all = TRUE))
 
 # Packages:
+library(tidyverse)
 library(brms)
-library(dplyr)
-library(tidybayes)
-library(ggplot2)
-library(patchwork)
-library(ggmcmc)
-library(jtools)
 library(broom.mixed)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

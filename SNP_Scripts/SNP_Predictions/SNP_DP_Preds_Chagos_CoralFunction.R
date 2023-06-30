@@ -13,16 +13,16 @@ library(jtools)
 
 # Load models ####
 
-load("SNP_ModelOutputs/Coral_Nitrogen_brms.Rdata")
-load("SNP_ModelOutputs/Erosion_Nitrogen_brms.Rdata")
-load("SNP_ModelOutputs/Grazing_Nitrogen_brms.Rdata")
-load("SNP_ModelOutputs/Fish_Nitrogen_brms.Rdata")
+load("SNP_ModelOutputs/CoralGrowth_Nitrogen_c.Rdata")
+load("SNP_ModelOutputs/Erosion_Nitrogen_c.Rdata")
+load("SNP_ModelOutputs/Grazing_Nitrogen_c.Rdata")
+load("SNP_ModelOutputs/Fish_Nitrogen_c.Rdata")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Load predication data ####
 
-pred.data <- read.csv("SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted.csv")
+pred.data <- read.csv("SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted_priors.csv")
 
 # Calculate total nitrogen input (sum of the 3 species)
 pred.data <- pred.data[,c("Atoll_Island", "Species", "NitrogenInput.Current", "NitrogenInput.high.nn", "NitrogenInput.low.nn")]
@@ -44,34 +44,46 @@ colnames(pred.data)[1] <- "Atoll_Island"
 # Current predictions:
 
 pred.data$logNitrogen <- log(pred.data$NitrogenInput.Current)
-pred.data.current <- pred.data[,c("Atoll_Island", "logNitrogen")]
 
-coral.current <- as.data.frame(predict(coralgrowth.model.run, newdata = pred.data.current, allow_new_levels = TRUE))
-fish.current <- as.data.frame(predict(fishbiomass.model.run, newdata = pred.data.current, allow_new_levels = TRUE))
-graz.current <- as.data.frame(predict(grazing.model.run, newdata = pred.data.current, allow_new_levels = TRUE))
-eros.current <- as.data.frame(predict(erosion.model.run, newdata = pred.data.current, allow_new_levels = TRUE))
+# Center logNitrogen data around 1.86
+pred.data$clogNitrogen <- pred.data$logNitrogen - 1.86
+
+pred.data.current <- pred.data[,c("Atoll_Island", "clogNitrogen")]
+
+coral.current <- as.data.frame(predict(coralgrowth.model.run.center, newdata = pred.data.current, allow_new_levels = TRUE))
+fish.current <- as.data.frame(predict(fishbiomass.model.run.center, newdata = pred.data.current, allow_new_levels = TRUE))
+graz.current <- as.data.frame(predict(grazing.model.run.center, newdata = pred.data.current, allow_new_levels = TRUE))
+eros.current <- as.data.frame(predict(erosion.model.run.center, newdata = pred.data.current, allow_new_levels = TRUE))
 
 # Bad veg predictions:
 
 pred.data$logNitrogen <- log(pred.data$NitrogenInput.high.nn)
-pred.data.bveg <- pred.data[,c("Atoll_Island", "logNitrogen")]
 
-coral.bveg <- as.data.frame(predict(coralgrowth.model.run, newdata = pred.data.bveg, allow_new_levels = TRUE))
-fish.bveg <- as.data.frame(predict(fishbiomass.model.run, newdata = pred.data.bveg, allow_new_levels = TRUE))
-graz.bveg <- as.data.frame(predict(grazing.model.run, newdata = pred.data.bveg, allow_new_levels = TRUE))
-eros.bveg <- as.data.frame(predict(erosion.model.run, newdata = pred.data.bveg, allow_new_levels = TRUE))
+# Center logNitrogen data around 1.86
+pred.data$clogNitrogen <- pred.data$logNitrogen - 1.86
+
+pred.data.bveg <- pred.data[,c("Atoll_Island", "clogNitrogen")]
+
+coral.bveg <- as.data.frame(predict(coralgrowth.model.run.center, newdata = pred.data.bveg, allow_new_levels = TRUE))
+fish.bveg <- as.data.frame(predict(fishbiomass.model.run.center, newdata = pred.data.bveg, allow_new_levels = TRUE))
+graz.bveg <- as.data.frame(predict(grazing.model.run.center, newdata = pred.data.bveg, allow_new_levels = TRUE))
+eros.bveg <- as.data.frame(predict(erosion.model.run.center, newdata = pred.data.bveg, allow_new_levels = TRUE))
 
 # Good veg predictions:
 
 pred.data$logNitrogen <- log(pred.data$NitrogenInput.low.nn)
-pred.data.gveg <- pred.data[,c("Atoll_Island", "logNitrogen")]
 
-coral.gveg <- as.data.frame(predict(coralgrowth.model.run, newdata = pred.data.gveg, allow_new_levels = TRUE))
-fish.gveg <- as.data.frame(predict(fishbiomass.model.run, newdata = pred.data.gveg, allow_new_levels = TRUE))
-graz.gveg <- as.data.frame(predict(grazing.model.run, newdata = pred.data.gveg, allow_new_levels = TRUE))
-eros.gveg <- as.data.frame(predict(erosion.model.run, newdata = pred.data.gveg, allow_new_levels = TRUE))
+# Center logNitrogen data around 1.86
+pred.data$clogNitrogen <- pred.data$logNitrogen - 1.86
 
-rm(coralgrowth.model.run, erosion.model.run, grazing.model.run, fishbiomass.model.run)
+pred.data.gveg <- pred.data[,c("Atoll_Island", "clogNitrogen")]
+
+coral.gveg <- as.data.frame(predict(coralgrowth.model.run.center, newdata = pred.data.gveg, allow_new_levels = TRUE))
+fish.gveg <- as.data.frame(predict(fishbiomass.model.run.center, newdata = pred.data.gveg, allow_new_levels = TRUE))
+graz.gveg <- as.data.frame(predict(grazing.model.run.center, newdata = pred.data.gveg, allow_new_levels = TRUE))
+eros.gveg <- as.data.frame(predict(erosion.model.run.center, newdata = pred.data.gveg, allow_new_levels = TRUE))
+
+rm(coralgrowth.model.run.center, erosion.model.run.center, grazing.model.run.center, fishbiomass.model.run.center)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -137,4 +149,4 @@ pred.data$erosion.gveg.high <- eros.gveg$Q97.5
 
 # Write:
 
-write.csv(pred.data, "SNP_Data/Processed/Pred_CoralFunction_Chagos.csv")
+write.csv(pred.data, "SNP_Data/Processed/Prediction_data/Pred_CoralFunction_Chagos_c.csv")

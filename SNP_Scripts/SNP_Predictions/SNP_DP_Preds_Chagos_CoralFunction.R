@@ -149,4 +149,4 @@ pred.data$erosion.gveg.high <- eros.gveg$Q97.5
 
 # Write:
 
-write.csv(pred.data, "SNP_Data/Processed/Prediction_data/Pred_CoralFunction_Chagos_c.csv")
+write.csv(pred.data, "SNP_Data/Processed/Pred_CoralFunction_Chagos_c.csv")

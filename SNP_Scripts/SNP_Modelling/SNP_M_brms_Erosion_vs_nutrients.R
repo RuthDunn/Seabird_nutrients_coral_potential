@@ -50,9 +50,9 @@ fish$Atoll_Island <- paste (fish$Atoll, fish$Island, sep = "_")
 # Run model ####
 
 erosion.model.run.center <- brm(log1Erosion ~ clogNitrogen + (1|Atoll_Island),
-                                   data = fish,
-                                   iter = 3000, warmup = 1000, chains = 4, cores = 4,
-                                   control = list(adapt_delta = 0.99, max_treedepth = 12),             # Resolve divergent transitions
+                                data = fish,
+                                iter = 3000, warmup = 1000, chains = 4, cores = 4,
+                                control = list(adapt_delta = 0.99, max_treedepth = 12),             # Resolve divergent transitions
                                 prior = c(prior(normal(4.6, 0.5), class = "Intercept"),                # Based on Graham et al 2018
                                           prior(normal(1,0.5), class = "b", coef = "clogNitrogen")))   # We expect a positive effect, like that seen with seabirds in Graham et al 2018
 

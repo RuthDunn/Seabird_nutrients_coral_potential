@@ -106,9 +106,9 @@ test <- seabirds %>%
 
 # Vals in tonnes for the text:
 
-mean(test$CurrentN)/1000
-mean(test$Highnn.N)/1000
-mean(test$Lownn.N)/1000
+sum(test$CurrentN)/1000
+sum(test$Highnn.N)/1000
+sum(test$Lownn.N)/1000
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

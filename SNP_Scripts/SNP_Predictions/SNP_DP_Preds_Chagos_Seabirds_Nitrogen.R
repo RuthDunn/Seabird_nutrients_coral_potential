@@ -102,6 +102,17 @@ seabirds$Defecation.rate <- (26.4 * (seabirds$Mass*1000)^0.63)/1150^0.63
 # Red-footed booby - one adult always present, one away over night - assume 1.5 birds present
 # Lesser noddy - short foraging trips, don't adjust numbers - assume 2 birds present
 
+seabirds <- seabirds %>%
+  mutate(Census = ifelse(Species == "Sula_sula", Census * 1.5,
+                         ifelse(Species == "Anous_tenuirostris", Census * 2,
+                                Census)),
+         Value.high.nn = ifelse(Species == "Sula_sula", Value.high.nn * 1.5,
+                         ifelse(Species == "Anous_tenuirostris", Value.high.nn * 2,
+                                Value.high.nn)),
+         Value.low.nn = ifelse(Species == "Sula_sula", Value.low.nn * 1.5,
+                         ifelse(Species == "Anous_tenuirostris", Value.low.nn * 2,
+                                Value.low.nn)))
+
 seabirds$NitrogenInput.Current <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Census * seabirds$Season.length)
 seabirds$NitrogenInput.high.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.high.nn * seabirds$Season.length)
 seabirds$NitrogenInput.low.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.low.nn * seabirds$Season.length)

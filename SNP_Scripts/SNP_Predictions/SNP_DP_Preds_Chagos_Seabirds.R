@@ -52,35 +52,26 @@ predictions1 <- cbind(islands.long,predictions1)
 
 # 2) If we eradicate rats but keep high proportions of plantation forest
 # (the lower quartile of non plantation forest cover in Chagos: 73%)
-islands.long$NativeVeg <- 75
+islands.long$NativeVeg <- 50
 
 predictions2 <- exp(fitted(seabirds.model, newdata = islands.long[,c("Atoll_Island", "Species",
-                                                                         "Rattus_rattus", "logArea", "NativeVeg")],
+                                                                     "Rattus_rattus", "logArea", "NativeVeg")],
                            allow_new_levels = TRUE, dpar = "mu"))
 
 predictions2 <- cbind(islands.long,predictions2)
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 3) If we eradicate rats but keep high proportions of plantation forest
+# (the lower quartile of non plantation forest cover in Chagos: 73%)
+islands.long$NativeVeg <- 75
 
-ggplot(predictions1, aes(x = Atoll_Island, y = (Estimate), ymin = (Q2.5), ymax = (Q97.5))) +
-  geom_point() +
-  geom_errorbar() +
-  facet_grid(Species~.)
+predictions3 <- exp(fitted(seabirds.model, newdata = islands.long[,c("Atoll_Island", "Species",
+                                                                         "Rattus_rattus", "logArea", "NativeVeg")],
+                           allow_new_levels = TRUE, dpar = "mu"))
 
-ggplot(predictions1, aes(x = Estimate)) + geom_histogram() + facet_grid(Species~.)
-ggplot(predictions1, aes(x = Q97.5)) + geom_histogram() + facet_grid(Species~.)
-ggplot(predictions1, aes(x = Q2.5)) + geom_histogram() + facet_grid(Species~.)
-
-ggplot(predictions2, aes(x = Atoll_Island, y = (Estimate), ymin = (Q2.5), ymax = (Q97.5))) +
-  geom_point() +
-  geom_errorbar() +
-  facet_grid(Species~.)
-
-ggplot(predictions2, aes(x = Estimate)) + geom_histogram() + facet_grid(Species~.)
-ggplot(predictions2, aes(x = Q97.5)) + geom_histogram() + facet_grid(Species~.)
-ggplot(predictions2, aes(x = Q2.5)) + geom_histogram() + facet_grid(Species~.)
+predictions3 <- cbind(islands.long,predictions3)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 write.csv(predictions1, "SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNForest_priors.csv")
-write.csv(predictions2, "SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest_priors.csv")
+write.csv(predictions2, "SNP_ModelOutputs/Chagos_Seabird_Predictions_MidNNForest_priors.csv")
+write.csv(predictions3, "SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest_priors.csv")

@@ -26,6 +26,8 @@ pred.high.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNFore
 pred.high.nn <- pred.high.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
 pred.low.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest_priors.csv")
 pred.low.nn <- pred.low.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
+pred.mid.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_MidNNForest_priors.csv")
+pred.mid.nn <- pred.mid.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
 
 # Add predicted values
 pred.high.nn <- join(seabirds, pred.high.nn, by = c("Atoll_Island", "Species"))
@@ -38,11 +40,17 @@ pred.low.nn$Value.low.nn <- ifelse(is.na(pred.low.nn$Estimate) == T, pred.low.nn
 pred.low.nn$Value.low.nn.low <- ifelse(is.na(pred.low.nn$Estimate) == T, pred.low.nn$Census, pred.low.nn$Q2.5)
 pred.low.nn$Value.low.nn.high <- ifelse(is.na(pred.low.nn$Estimate) == T, pred.low.nn$Census, pred.low.nn$Q97.5)
 
+pred.mid.nn <- join(seabirds, pred.mid.nn, by = c("Atoll_Island", "Species"))
+pred.mid.nn$Value.mid.nn <- ifelse(is.na(pred.mid.nn$Estimate) == T, pred.mid.nn$Census, pred.mid.nn$Estimate)
+pred.mid.nn$Value.mid.nn.low <- ifelse(is.na(pred.mid.nn$Estimate) == T, pred.mid.nn$Census, pred.mid.nn$Q2.5)
+pred.mid.nn$Value.mid.nn.high <- ifelse(is.na(pred.mid.nn$Estimate) == T, pred.mid.nn$Census, pred.mid.nn$Q97.5)
+
 seabirds <- cbind(seabirds,
                   pred.high.nn[,c("Value.high.nn", "Value.high.nn.low", "Value.high.nn.high")],
+                  pred.mid.nn[,c("Value.mid.nn", "Value.mid.nn.low", "Value.mid.nn.high")],
                   pred.low.nn[,c("Value.low.nn", "Value.low.nn.low", "Value.low.nn.high")])
 
-rm(pred.high.nn, pred.low.nn)
+rm(pred.high.nn, pred.low.nn, pred.mid.nn)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -223,6 +231,10 @@ seabirds$Pop_Consumption_t.pred.high.nn <- seabirds$Indiv_Consumption_g * (seabi
 seabirds$Pop_Consumption_t.pred.high.nn.low <- seabirds$Indiv_Consumption_low_g * (seabirds$Value.high.nn * 2)/1000000
 seabirds$Pop_Consumption_t.pred.high.nn.high <- seabirds$Indiv_Consumption_up_g * (seabirds$Value.high.nn * 2)/1000000
 
+seabirds$Pop_Consumption_t.pred.mid.nn <- seabirds$Indiv_Consumption_g * (seabirds$Value.mid.nn * 2)/1000000
+seabirds$Pop_Consumption_t.pred.mid.nn.low <- seabirds$Indiv_Consumption_low_g * (seabirds$Value.mid.nn * 2)/1000000
+seabirds$Pop_Consumption_t.pred.mid.nn.high <- seabirds$Indiv_Consumption_up_g * (seabirds$Value.mid.nn * 2)/1000000
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Group by species
@@ -238,16 +250,22 @@ Pop_Consumption_t.pred.high.nn <- by(seabirds$Pop_Consumption_t.pred.high.nn, li
 Pop_Consumption_t.pred.high.nn.low <- by(seabirds$Pop_Consumption_t.pred.high.nn.low, list(seabirds$Species), FUN = sum)
 Pop_Consumption_t.pred.high.nn.high <- by(seabirds$Pop_Consumption_t.pred.high.nn.high, list(seabirds$Species), FUN = sum)
 
+Pop_Consumption_t.pred.mid.nn <- by(seabirds$Pop_Consumption_t.pred.mid.nn, list(seabirds$Species), FUN = sum)
+Pop_Consumption_t.pred.mid.nn.low <- by(seabirds$Pop_Consumption_t.pred.mid.nn.low, list(seabirds$Species), FUN = sum)
+Pop_Consumption_t.pred.mid.nn.high <- by(seabirds$Pop_Consumption_t.pred.mid.nn.high, list(seabirds$Species), FUN = sum)
+
 sp.consumption <- as.data.frame(cbind(t(rbind(Pop_Consumption_t, Pop_Consumption_low_t, Pop_Consumption_high_t,
                                               Pop_Consumption_t.pred.low.nn, Pop_Consumption_t.pred.low.nn.low, Pop_Consumption_t.pred.low.nn.high,
-                                              Pop_Consumption_t.pred.high.nn, Pop_Consumption_t.pred.high.nn.low, Pop_Consumption_t.pred.high.nn.high))))
+                                              Pop_Consumption_t.pred.high.nn, Pop_Consumption_t.pred.high.nn.low, Pop_Consumption_t.pred.high.nn.high,
+                                              Pop_Consumption_t.pred.mid.nn, Pop_Consumption_t.pred.mid.nn.low, Pop_Consumption_t.pred.mid.nn.high))))
 
-sp.consumption[,1:9] <- sapply(sp.consumption[,1:9],as.numeric)
+sp.consumption[,1:2] <- sapply(sp.consumption[,1:2],as.numeric)
 
 rm(Pop_Consumption_t, Pop_Consumption_low_t, Pop_Consumption_high_t,
    Pop_Consumption_t.pred.low.nn, Pop_Consumption_t.pred.low.nn.low, Pop_Consumption_t.pred.low.nn.high,
    Pop_Consumption_t.pred.high.nn, Pop_Consumption_t.pred.high.nn.low, Pop_Consumption_t.pred.high.nn.high,
-   model4, NewVal, NewVal_i, i)
+   model4, NewVal, NewVal_i, i,
+   Pop_Consumption_t.pred.mid.nn, Pop_Consumption_t.pred.mid.nn.low, Pop_Consumption_t.pred.mid.nn.high)
 
 # Create "All species" column
 
@@ -266,4 +284,4 @@ write.csv(sp.consumption, "SNP_Data/Processed/Seabird_Group_Consumption_Predicte
 # Results text:
 sp.consumption["Anous_tenuirostris",c(7:9)]
 sp.consumption["Anous_tenuirostris",c(4:6)]
-
+sp.consumption["Anous_tenuirostris",c(10:12)]

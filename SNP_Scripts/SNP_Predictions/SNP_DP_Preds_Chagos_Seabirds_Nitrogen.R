@@ -25,6 +25,8 @@ pred.high.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_HighNNFore
 pred.high.nn <- pred.high.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
 pred.low.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_LowNNForest_priors.csv")
 pred.low.nn <- pred.low.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
+pred.mid.nn <- read.csv("SNP_ModelOutputs/Chagos_Seabird_Predictions_MidNNForest_priors.csv")
+pred.mid.nn <- pred.mid.nn[,c("Atoll_Island", "Species", "Estimate", "Q2.5", "Q97.5")]
 
 # Add predicted values
 pred.high.nn <- join(seabirds, pred.high.nn, by = c("Atoll_Island", "Species"))
@@ -39,10 +41,18 @@ pred.low.nn$Value.low.nn.q2.5 <- ifelse(is.na(pred.low.nn$Q2.5) == T, pred.low.n
 pred.low.nn$Value.low.nn.q.97.5 <- ifelse(is.na(pred.low.nn$Q97.5) == T, pred.low.nn$Census, pred.low.nn$Q97.5)
 pred.low.nn <- pred.low.nn[,c("Atoll_Island", "Species", "Value.low.nn", "Value.low.nn.q2.5", "Value.low.nn.q.97.5")]
 
-seabirds <- cbind(seabirds, pred.high.nn[,c("Value.high.nn", "Value.high.nn.q2.5", "Value.high.nn.q97.5")],
-                  pred.low.nn[,c("Value.low.nn", "Value.low.nn.q2.5", "Value.low.nn.q.97.5")])
+pred.mid.nn <- join(seabirds, pred.mid.nn, by = c("Atoll_Island", "Species"))
+pred.mid.nn$Value.mid.nn <- ifelse(is.na(pred.mid.nn$Estimate) == T, pred.mid.nn$Census, pred.mid.nn$Estimate)
+pred.mid.nn$Value.mid.nn.q2.5 <- ifelse(is.na(pred.mid.nn$Q2.5) == T, pred.mid.nn$Census, pred.mid.nn$Q2.5)
+pred.mid.nn$Value.mid.nn.q.97.5 <- ifelse(is.na(pred.mid.nn$Q97.5) == T, pred.mid.nn$Census, pred.mid.nn$Q97.5)
+pred.mid.nn <- pred.mid.nn[,c("Atoll_Island", "Species", "Value.mid.nn", "Value.mid.nn.q2.5", "Value.mid.nn.q.97.5")]
 
-rm(pred.high.nn, pred.low.nn)
+seabirds <- cbind(seabirds,
+                  pred.high.nn[,c("Value.high.nn", "Value.high.nn.q2.5", "Value.high.nn.q97.5")],
+                  pred.low.nn[,c("Value.low.nn", "Value.low.nn.q2.5", "Value.low.nn.q.97.5")],
+                  pred.mid.nn[,c("Value.mid.nn", "Value.mid.nn.q2.5", "Value.mid.nn.q.97.5")])
+
+rm(pred.high.nn, pred.low.nn, pred.mid.nn)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -116,6 +126,7 @@ seabirds <- seabirds %>%
 seabirds$NitrogenInput.Current <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Census * seabirds$Season.length)
 seabirds$NitrogenInput.high.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.high.nn * seabirds$Season.length)
 seabirds$NitrogenInput.low.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.low.nn * seabirds$Season.length)
+seabirds$NitrogenInput.mid.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seabirds$Value.mid.nn * seabirds$Season.length)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -128,11 +139,13 @@ test <- seabirds %>%
   summarise(CurrentN = sum(NitrogenInput.Current),
             Lownn.N = sum(NitrogenInput.low.nn),
             Highnn.N = sum(NitrogenInput.high.nn),
+            Midnn.N = sum(NitrogenInput.mid.nn),
             Area = mean(Size_Ha))
 
 sum(test$CurrentN)/1000
 sum(test$Highnn.N)/1000
 sum(test$Lownn.N)/1000
+sum(test$Midnn.N)/1000
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

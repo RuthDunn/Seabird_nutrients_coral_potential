@@ -130,25 +130,6 @@ seabirds$NitrogenInput.mid.nn <- (0.181 * (seabirds$Defecation.rate/1000) * seab
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Check that this all looks okay:
-
-library(tidyverse)
-
-test <- seabirds %>%
-  group_by(Atoll_Island) %>%
-  summarise(CurrentN = sum(NitrogenInput.Current),
-            Lownn.N = sum(NitrogenInput.low.nn),
-            Highnn.N = sum(NitrogenInput.high.nn),
-            Midnn.N = sum(NitrogenInput.mid.nn),
-            Area = mean(Size_Ha))
-
-sum(test$CurrentN)/1000
-sum(test$Highnn.N)/1000
-sum(test$Lownn.N)/1000
-sum(test$Midnn.N)/1000
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 # We're going to use this dataframe to make predictions
 # Therefore, keep "rat islands" only (other than DG):
 

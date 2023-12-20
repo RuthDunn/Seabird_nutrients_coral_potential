@@ -28,6 +28,12 @@ pred.data <- read.csv("SNP_Data/Processed/Seabird_NutrientInput_Chagos_Predicted
 pred.data <- pred.data[,c("Atoll_Island", "Species", "NitrogenInput.Current",
                           "NitrogenInput.high.nn", "NitrogenInput.low.nn", "NitrogenInput.mid.nn")]
 
+# Values for text:
+sum(pred.data$NitrogenInput.Current)/1000
+sum(pred.data$NitrogenInput.high.nn)/1000
+sum(pred.data$NitrogenInput.mid.nn)/1000
+sum(pred.data$NitrogenInput.low.nn)/1000
+
 # Find total nitrogen input per Atoll_Island
 # (Under the different scenarios)
 pred.data <- aggregate(pred.data[,c(3:6)], by = list(pred.data$Atoll_Island), FUN = "sum")
